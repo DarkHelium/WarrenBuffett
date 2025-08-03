@@ -5,6 +5,7 @@ Warren Buffett Stock Analysis Agent with Knowledge Chunking
 import logging
 import asyncio
 from typing import Dict, Any, Optional
+from pathlib import Path
 from services.llm_service import LLMService
 from services.knowledge_chunking_service import KnowledgeChunkingService
 from tools.market_data_tool import MarketDataTool
@@ -37,7 +38,8 @@ class WarrenBuffettAgent:
             logger.info("Initializing Warren Buffett knowledge base...")
             
             # Try to load pre-processed knowledge first
-            knowledge_cache_path = "processed_knowledge.json"
+            base_dir = Path(__file__).resolve().parent.parent
+            knowledge_cache_path = str(base_dir / "processed_knowledge.jsonl")
             if not self.knowledge_service.load_processed_knowledge(knowledge_cache_path):
                 logger.info("No cached knowledge found, processing full knowledge base...")
                 success = await self.knowledge_service.initialize_knowledge_base()

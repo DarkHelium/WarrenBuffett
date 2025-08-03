@@ -10,6 +10,10 @@ This script tests the core functionality of the LangGraph-based agent including:
 
 import asyncio
 import logging
+import pytest
+
+# Mark entire module for asynchronous pytest
+pytestmark = pytest.mark.asyncio
 import json
 from datetime import datetime
 import sys

@@ -11,9 +11,9 @@ import logging
 from pathlib import Path
 import json
 
-from ..core.config import Config
-from ..prompts.warren_buffett_knowledge_loader import get_warren_buffett_knowledge
-from ..services.llm_service import LLMService
+from core.config import Config
+from prompts.warren_buffett_knowledge_loader import get_warren_buffett_knowledge
+from services.llm_service import LLMService
 
 logger = logging.getLogger(__name__)
 
@@ -311,15 +311,21 @@ MEMORABLE QUOTES:
             return False
     
     def save_processed_knowledge(self, filepath: str):
-        """Save processed knowledge to file"""
+        """Save processed knowledge to file in JSON Lines (.jsonl) format"""
+        # Ensure the file has a .jsonl extension
+        filepath = str(Path(filepath).with_suffix('.jsonl'))
         with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(self.processed_knowledge, f, indent=2, ensure_ascii=False)
+            # Each processed knowledge object is written on a single line
+            json.dump(self.processed_knowledge, f, ensure_ascii=False)
+            f.write('\n')
     
     def load_processed_knowledge(self, filepath: str) -> bool:
-        """Load processed knowledge from file"""
+        """Load processed knowledge from file in JSON Lines (.jsonl) format"""
         try:
+            filepath = str(Path(filepath).with_suffix('.jsonl'))
             with open(filepath, 'r', encoding='utf-8') as f:
-                self.processed_knowledge = json.load(f)
+                first_line = f.readline()
+                self.processed_knowledge = json.loads(first_line) if first_line else {}
             return True
         except Exception as e:
             logger.error(f"Failed to load processed knowledge: {e}")

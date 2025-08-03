@@ -7,11 +7,13 @@ import os
 from typing import Optional
 from dataclasses import dataclass
 from dotenv import load_dotenv
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
+# Explicitly load .env in project root (fallback to default behaviour)
+project_root_env = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=project_root_env, override=False)
 
 
 @dataclass
