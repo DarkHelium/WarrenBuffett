@@ -7,7 +7,11 @@ from typing import Dict, Any
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from agent.warren_buffett_agent import WarrenBuffettAgent
+try:
+    from agent.langgraph_warren_buffett_agent import LangGraphWarrenBuffettAgent as WarrenBuffettAgent
+except ImportError:
+    # Fallback to classic agent if LangGraph implementation unavailable
+    from agent.warren_buffett_agent import WarrenBuffettAgent
 from core.config import Config
 
 logger = logging.getLogger(__name__)
