@@ -1,0 +1,401 @@
+<div class="markets-container">
+  <!-- Header -->
+  <div class="markets-header">
+    <h1>Markets Overview</h1>
+    <div class="view-toggle">
+      <button 
+        class="toggle-btn" 
+        [class.active]="selectedView() === 'positions'"
+        (click)="setView('positions')">
+        Warren Buffett Picks
+      </button>
+      <button 
+        class="toggle-btn" 
+        [class.active]="selectedView() === 'market'"
+        (click)="setView('market')">
+        Market Overview
+      </button>
+    </div>
+  </div>
+
+  <!-- Market Indices Bar -->
+  <div class="indices-bar">
+    <div class="indices-scroll">
+      <div class="index-item" *ngFor="let index of marketIndices()">
+        <span class="index-name">{{ index.name }}</span>
+        <span class="index-price">{{ formatCurrency(index.price) }}</span>
+        <span class="index-change" [class]="getChangeClass(index.change)">
+          {{ formatCurrency(index.change) }} ({{ formatPercentage(index.change_percent) }})
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Warren Buffett Picks View -->
+  <div class="content-section" *ngIf="selectedView() === 'positions'">
+    <!-- Portfolio Summary -->
+    <div class="portfolio-summary">
+      <div class="summary-card">
+        <h3>Portfolio Value</h3>
+        <div class="portfolio-value">{{ formatCurrency(totalPortfolioValue()) }}</div>
+        <div class="portfolio-change" [class]="getChangeClass(totalPortfolioChange())">
+          {{ formatCurrency(totalPortfolioChange()) }} ({{ formatPercentage(totalPortfolioChangePercent()) }})
+        </div>
+      </div>
+      <div class="summary-card">
+        <h3>Total Positions</h3>
+        <div class="portfolio-value">{{ buffettPositions().length }}</div>
+        <div class="portfolio-subtitle">Active Holdings</div>
+      </div>
+      <div class="summary-card">
+        <h3>Best Performer</h3>
+        <div class="portfolio-value" *ngIf="buffettPositions().length > 0">
+          {{ buffettPositions()[0]?.symbol }}
+        </div>
+        <div class="portfolio-subtitle" *ngIf="buffettPositions().length > 0">
+          {{ formatPercentage(buffettPositions()[0].change_percent || 0) }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Positions Table -->
+    <div class="positions-section">
+      <h2>Warren Buffett Stock Positions</h2>
+      <div class="analysis-info">
+        <p>📊 <strong>Enhanced Analysis:</strong> Each position is analyzed using Warren Buffett's investment principles including profitability (ROE > 15%), financial strength, valuation metrics, business quality, growth prospects, and dividend sustainability. All recommendations are based on real fundamental data from Finnhub API.</p>
+      </div>
+      
+      <div class="loading-spinner" *ngIf="isLoadingPositions()">
+        <div class="spinner"></div>
+        <span>Loading positions and performing fundamental analysis...</span>
+      </div>
+      
+      <div class="positions-table" *ngIf="!isLoadingPositions()">
+        <div class="table-header">
+          <div class="col-symbol">Symbol</div>
+          <div class="col-name">Company</div>
+          <div class="col-price">Price</div>
+          <div class="col-change">Change</div>
+          <div class="col-shares">Shares</div>
+          <div class="col-value">Value</div>
+          <div class="col-recommendation">Rating</div>
+        </div>
+        
+        <div class="table-row clickable-row" *ngFor="let position of buffettPositions()" 
+             (click)="showAnalysisDetails(position)"
+             [class.has-analysis]="position.analysis">
+          <div class="col-symbol">
+            <span class="symbol-badge">{{ position.symbol }}</span>
+          </div>
+          <div class="col-name">{{ position.name }}</div>
+          <div class="col-price">{{ formatCurrency(position.price) }}</div>
+          <div class="col-change">
+            <span class="change-amount" [class]="getChangeClass(position.change)">
+              {{ formatCurrency(position.change) }}
+            </span>
+            <span class="change-percent" [class]="getChangeClass(position.change)">
+              {{ formatPercentage(position.change_percent) }}
+            </span>
+          </div>
+          <div class="col-shares">{{ position.position_size?.toLocaleString() }}</div>
+          <div class="col-value">{{ formatCurrency(position.value || 0) }}</div>
+          <div class="col-recommendation">
+            <div class="recommendation-container">
+              <span class="recommendation-badge" [class]="getRecommendationClass(position.recommendation || '')">
+                <span *ngIf="position.loading_analysis" class="analysis-loading">
+                  <div class="mini-spinner"></div>
+                  Analyzing...
+                </span>
+                <span *ngIf="!position.loading_analysis">
+                  {{ position.recommendation || 'N/A' }}
+                </span>
+              </span>
+              <div class="analysis-score" *ngIf="position.analysis && !position.loading_analysis">
+                <span class="score-text">{{ position.analysis.score_percentage.toFixed(0) }}%</span>
+                <div class="score-bar">
+                  <div class="score-fill" [style.width.%]="position.analysis.score_percentage"></div>
+                </div>
+              </div>
+              <div class="click-hint" *ngIf="position.analysis && !position.loading_analysis">
+                Click for details
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Market Overview -->
+  <div class="content-section" *ngIf="selectedView() === 'market'">
+    <!-- Search Bar -->
+    <div class="search-section">
+      <div class="search-bar">
+        <input 
+          type="text" 
+          placeholder="Search stocks..." 
+          [(ngModel)]="searchQuery"
+          (input)="searchStocks()"
+          class="search-input">
+        <button class="search-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search Results -->
+    <div class="search-results" *ngIf="searchResults().length > 0">
+      <h3>Search Results</h3>
+      <div class="stocks-grid">
+        <div class="stock-card" *ngFor="let stock of searchResults()">
+          <div class="stock-header">
+            <span class="stock-symbol">{{ stock.symbol }}</span>
+            <span class="stock-price">{{ formatCurrency(stock.price || 0) }}</span>
+          </div>
+          <div class="stock-name">{{ stock.description }}</div>
+          <div class="stock-change" [class]="getChangeClass(stock.change || 0)">
+            {{ formatCurrency(stock.change || 0) }} ({{ formatPercentage(stock.percent_change || 0) }})
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Market Sectors -->
+    <div class="sectors-section">
+      <h2>Market Sectors</h2>
+      <div class="loading-spinner" *ngIf="isLoadingMarket()">
+        <div class="spinner"></div>
+        <span>Loading market data...</span>
+      </div>
+      
+      <div class="sectors-grid" *ngIf="!isLoadingMarket()">
+        <div class="sector-card" *ngFor="let sector of marketSectors()">
+          <div class="sector-header">
+            <h3>{{ sector.name }}</h3>
+            <span class="sector-change" [class]="getChangeClass(sector.change_percent)">
+              {{ formatPercentage(sector.change_percent) }}
+            </span>
+          </div>
+          <div class="sector-stocks">
+            <div class="sector-stock" *ngFor="let stock of sector.stocks">
+              <div class="stock-info">
+                <span class="stock-symbol">{{ stock.symbol }}</span>
+                <span class="stock-name">{{ stock.description }}</span>
+              </div>
+              <div class="stock-price-info">
+                <span class="stock-price">{{ formatCurrency(stock.price || 0) }}</span>
+                <span class="stock-change" [class]="getChangeClass(stock.change || 0)">
+                  {{ formatPercentage(stock.percent_change || 0) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popular Stocks -->
+    <div class="popular-section">
+      <h2>Popular Stocks</h2>
+      <div class="stocks-grid">
+        <div class="stock-card" *ngFor="let stock of popularStocks()">
+          <div class="stock-header">
+            <span class="stock-symbol">{{ stock.symbol }}</span>
+            <span class="stock-price">{{ formatCurrency(stock.price || 0) }}</span>
+          </div>
+          <div class="stock-name">{{ stock.description }}</div>
+          <div class="stock-change" [class]="getChangeClass(stock.change || 0)">
+            {{ formatCurrency(stock.change || 0) }} ({{ formatPercentage(stock.percent_change || 0) }})
+          </div>
+          <div class="stock-volume" *ngIf="stock.volume">
+            Volume: {{ stock.volume.toLocaleString() }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detailed Analysis Modal -->
+<div class="analysis-modal-overlay" *ngIf="selectedPosition()" (click)="hideAnalysisDetails()">
+  <div class="analysis-modal" (click)="$event.stopPropagation()" *ngIf="selectedPosition() as position">
+    <div class="modal-header">
+      <div class="modal-title">
+        <h2>{{ position.symbol }} - {{ position.name }}</h2>
+        <div class="modal-subtitle">Warren Buffett-Style Investment Analysis</div>
+      </div>
+      <button class="close-btn" (click)="hideAnalysisDetails()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-content" *ngIf="position.analysis">
+      <!-- Overall Score Section -->
+      <div class="analysis-section">
+        <h3>📊 Overall Investment Score</h3>
+        <div class="score-display">
+          <div class="score-circle">
+            <div class="score-number">{{ position.analysis.score_percentage.toFixed(0) }}%</div>
+            <div class="score-label">{{ position.analysis.overall_score }}/{{ position.analysis.max_score }}</div>
+          </div>
+          <div class="score-details">
+            <div class="recommendation-large" [class]="getRecommendationClass(position.analysis.recommendation)">
+              {{ position.analysis.recommendation }}
+            </div>
+            <div class="buffett-principles">
+              <span class="principles-label">Buffett Principles Met:</span>
+              <span class="principles-value" [class]="position.analysis.buffett_principles_met ? 'met' : 'not-met'">
+                {{ position.analysis.buffett_principles_met ? 'Yes ✓' : 'No ✗' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Reasoning -->
+      <div class="analysis-section">
+        <h3>🎯 Investment Thesis</h3>
+        <div class="reasoning-box">
+          <p class="main-reasoning">{{ position.analysis.recommendation_reasoning }}</p>
+        </div>
+      </div>
+
+      <!-- Detailed Criteria Scores -->
+      <div class="analysis-section">
+        <h3>📈 Warren Buffett Criteria Analysis</h3>
+        <div class="criteria-grid">
+          <div class="criteria-item">
+            <div class="criteria-header">
+              <span class="criteria-name">Profitability</span>
+              <span class="criteria-score">{{ position.analysis.criteria_scores.profitability }}/25</span>
+            </div>
+            <div class="criteria-bar">
+              <div class="criteria-fill" [style.width.%]="(position.analysis.criteria_scores.profitability / 25) * 100"></div>
+            </div>
+            <div class="criteria-description">ROE > 15%, consistent earnings</div>
+          </div>
+
+          <div class="criteria-item">
+            <div class="criteria-header">
+              <span class="criteria-name">Financial Strength</span>
+              <span class="criteria-score">{{ position.analysis.criteria_scores.financial_strength }}/20</span>
+            </div>
+            <div class="criteria-bar">
+              <div class="criteria-fill" [style.width.%]="(position.analysis.criteria_scores.financial_strength / 20) * 100"></div>
+            </div>
+            <div class="criteria-description">Low debt, strong balance sheet</div>
+          </div>
+
+          <div class="criteria-item">
+            <div class="criteria-header">
+              <span class="criteria-name">Valuation</span>
+              <span class="criteria-score">{{ position.analysis.criteria_scores.valuation }}/20</span>
+            </div>
+            <div class="criteria-bar">
+              <div class="criteria-fill" [style.width.%]="(position.analysis.criteria_scores.valuation / 20) * 100"></div>
+            </div>
+            <div class="criteria-description">Reasonable P/E, PEG ratios</div>
+          </div>
+
+          <div class="criteria-item">
+            <div class="criteria-header">
+              <span class="criteria-name">Business Quality</span>
+              <span class="criteria-score">{{ position.analysis.criteria_scores.business_quality }}/15</span>
+            </div>
+            <div class="criteria-bar">
+              <div class="criteria-fill" [style.width.%]="(position.analysis.criteria_scores.business_quality / 15) * 100"></div>
+            </div>
+            <div class="criteria-description">Competitive moat, margins</div>
+          </div>
+
+          <div class="criteria-item">
+            <div class="criteria-header">
+              <span class="criteria-name">Growth Prospects</span>
+              <span class="criteria-score">{{ position.analysis.criteria_scores.growth }}/10</span>
+            </div>
+            <div class="criteria-bar">
+              <div class="criteria-fill" [style.width.%]="(position.analysis.criteria_scores.growth / 10) * 100"></div>
+            </div>
+            <div class="criteria-description">Revenue growth consistency</div>
+          </div>
+
+          <div class="criteria-item">
+            <div class="criteria-header">
+              <span class="criteria-name">Dividend Quality</span>
+              <span class="criteria-score">{{ position.analysis.criteria_scores.dividend_quality }}/10</span>
+            </div>
+            <div class="criteria-bar">
+              <div class="criteria-fill" [style.width.%]="(position.analysis.criteria_scores.dividend_quality / 10) * 100"></div>
+            </div>
+            <div class="criteria-description">Sustainable payout ratio</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Reasoning Points -->
+      <div class="analysis-section" *ngIf="position.analysis.detailed_reasoning.length > 0">
+        <h3>🔍 Detailed Analysis Points</h3>
+        <div class="reasoning-list">
+          <div class="reasoning-item" *ngFor="let reason of position.analysis.detailed_reasoning">
+            <div class="reasoning-bullet">•</div>
+            <div class="reasoning-text">{{ reason }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk Factors -->
+      <div class="analysis-section" *ngIf="position.analysis.risk_factors.length > 0">
+        <h3>⚠️ Risk Factors</h3>
+        <div class="risk-list">
+          <div class="risk-item" *ngFor="let risk of position.analysis.risk_factors">
+            <div class="risk-icon">⚠️</div>
+            <div class="risk-text">{{ risk }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analysis Timestamp -->
+      <div class="analysis-footer">
+        <div class="timestamp">
+          <span class="timestamp-label">Analysis performed:</span>
+          <span class="timestamp-value">{{ position.analysis.analysis_timestamp | date:'medium' }}</span>
+        </div>
+        <div class="data-source">
+          <span class="source-label">Data source:</span>
+          <span class="source-value">Finnhub API (Real-time fundamental data)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- No Analysis Available -->
+    <div class="modal-content" *ngIf="!position.analysis">
+      <div class="no-analysis">
+        <div class="no-analysis-icon">📊</div>
+        <h3>Analysis Not Available</h3>
+        <p>Detailed fundamental analysis is not yet available for this position. The system is still loading comprehensive data from Finnhub API.</p>
+        <div class="basic-info">
+          <div class="info-item">
+            <span class="info-label">Current Price:</span>
+            <span class="info-value">{{ formatCurrency(position.price) }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Change:</span>
+            <span class="info-value" [class]="getChangeClass(position.change)">
+              {{ formatCurrency(position.change) }} ({{ formatPercentage(position.change_percent) }})
+            </span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Position Value:</span>
+            <span class="info-value">{{ formatCurrency(position.value || 0) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

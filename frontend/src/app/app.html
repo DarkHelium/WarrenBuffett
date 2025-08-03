@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<div class="trading-app">
+  <!-- Navigation Header -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="logo-section">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        <h1 class="app-title">{{ title() }}</h1>
+      </div>
+      
+      <nav class="main-nav">
+        <a routerLink="/" class="nav-link" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">AI Assistant</a>
+        <a routerLink="/dashboard" class="nav-link" routerLinkActive="active">Dashboard</a>
+        <a href="#" class="nav-link">Portfolio</a>
+        <a routerLink="/markets" class="nav-link" routerLinkActive="active">Markets</a>
+      </nav>
+      
+      <div class="header-actions">
+        <button class="search-btn">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+            <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+        <div class="user-profile">
+          <div class="profile-avatar">JD</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

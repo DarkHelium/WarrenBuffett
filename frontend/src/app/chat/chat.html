@@ -1,0 +1,146 @@
+<div class="chat-container">
+  <!-- Chat Header -->
+  <div class="chat-header">
+    <h2>💼 Warren Buffett AI Assistant</h2>
+    <p>Get personalized investment advice using advanced AI agent technology</p>
+  </div>
+
+  <!-- Chat Messages -->
+  <div class="chat-messages" #chatMessages>
+    @if (messages().length === 0) {
+      <div class="welcome-message">
+        <div class="welcome-icon">🚀</div>
+        <h3>Welcome to Warren Buffett's AI Assistant!</h3>
+        <p>Ask me about investment strategies, stock analysis, or market insights using my value investing principles.</p>
+        <div class="example-questions">
+          <p><strong>Try asking:</strong></p>
+          <ul>
+            <li>"What do you think about Apple stock?"</li>
+            <li>"How do you evaluate a company's economic moat?"</li>
+            <li>"What are your current top stock picks?"</li>
+            <li>"Should I invest in Tesla?"</li>
+          </ul>
+        </div>
+        <div class="agent-info">
+          <p><strong>🧠 Advanced Agent Mode:</strong> I'll use sophisticated reasoning, multiple tools, and provide detailed analysis traces.</p>
+        </div>
+      </div>
+    }
+    @for (msg of messages(); track msg) {
+      <div class="message {{msg.role}}">
+        <div class="message-avatar">
+          @if (msg.role === 'user') {
+            <span>👤</span>
+          } @else {
+            <span>🧠</span>
+          }
+        </div>
+        <div class="message-content">
+          <div class="message-header">
+            <strong>{{msg.role === 'user' ? 'You' : 'Warren Buffett'}}</strong>
+            <span class="message-time">{{getCurrentTime()}}</span>
+            @if (msg.iterations && msg.iterations > 0) {
+              <span class="iterations-badge">{{msg.iterations}} iterations</span>
+            }
+          </div>
+          <div class="message-text" [innerHTML]="parseMarkdown(msg.content)"></div>
+          
+          <!-- Agent Details - Always shown in advanced mode -->
+          @if (msg.role === 'assistant' && (msg.reasoning_traces?.length || msg.tool_usage?.length)) {
+            <div class="agent-details">
+              @if (msg.reasoning_traces && msg.reasoning_traces.length > 0) {
+                <div class="reasoning-section">
+                  <h4>🧠 Reasoning Process</h4>
+                  <div class="reasoning-traces">
+                    @for (trace of msg.reasoning_traces; track trace) {
+                      <div class="trace-item">{{trace}}</div>
+                    }
+                  </div>
+                </div>
+              }
+              
+              @if (msg.tool_usage && msg.tool_usage.length > 0) {
+                <div class="tools-section">
+                  <h4>🔧 Tools Used</h4>
+                  <div class="tool-usage">
+                    @for (tool of msg.tool_usage; track tool) {
+                      <div class="tool-item">
+                        <span class="tool-name">{{tool.tool}}</span>
+                        <span class="tool-input">Input: {{tool.input}}</span>
+                        <span class="tool-result">Result: {{tool.result.substring(0, 100)}}...</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+              
+              @if (msg.agent_context) {
+                <div class="context-section">
+                  <h4>📋 Agent Context</h4>
+                  <div class="context-info">{{msg.agent_context}}</div>
+                </div>
+              }
+            </div>
+          }
+          
+          @if (msg.suggestions && msg.suggestions.length > 0) {
+            <div class="suggestions">
+              <div class="suggestions-header">
+                <span class="suggestions-icon">💡</span>
+                <p>Warren Buffett's Stock Picks</p>
+              </div>
+              <div class="suggestions-list">
+                @for (stock of msg.suggestions; track stock) {
+                  <div class="suggestion-item">
+                    <span class="stock-symbol">{{stock.symbol}}</span>
+                    <span class="stock-details">Qty: {{stock.qty}} • {{stock.term}} term</span>
+                  </div>
+                }
+              </div>
+              <button (click)="invest(msg.suggestions)" class="btn btn-primary invest-btn">
+                <span>📈</span> Execute Investments
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Input Area -->
+  <div class="input-area">
+    <div class="input-group">
+      <input 
+        type="text" 
+        [(ngModel)]="newMessage" 
+        placeholder="Ask Warren Buffett about investments, market analysis, or stock picks..." 
+        (keydown)="onKeyDown($event)"
+        (keypress)="onKeyPress($event)"
+        class="message-input"
+        #messageInput
+        autocomplete="off"
+        maxlength="500">
+      <button 
+        (click)="sendMessage()" 
+        class="btn btn-primary send-btn"
+        [disabled]="!newMessage.trim()"
+        title="Send message (Enter)">
+        <span class="send-icon">📤</span>
+        <span class="send-text">Send</span>
+      </button>
+    </div>
+    
+    <!-- Mode Information -->
+    <div class="mode-info">
+      <div class="mode-indicator">
+        <span class="mode-icon">🧠</span>
+        <span class="mode-text">Advanced AI Agent with reasoning & tools</span>
+      </div>
+      <div class="agent-features">
+        <span class="feature">🔍 Stock Analysis</span>
+        <span class="feature">📊 Market Research</span>
+        <span class="feature">🧠 ReAct Reasoning</span>
+      </div>
+    </div>
+  </div>
+</div>
