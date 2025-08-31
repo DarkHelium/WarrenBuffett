@@ -29,7 +29,7 @@ RAW_FOLDERS = ["extracted_texts", "transcripts_raw"]
 # --------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent.parent / "agent" / "warren-buffett-dataset"
-OUTPUT_PATH = BASE_DIR / "processed_knowledge.jsonl"
+OUTPUT_PATH = BASE_DIR / "warren_buffett_dataset.jsonl"
 
 _whitespace_re = re.compile(r"\s+")
 

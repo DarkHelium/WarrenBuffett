@@ -50,7 +50,7 @@
       <div class="summary-card">
         <h3>Best Performer</h3>
         <div class="portfolio-value" *ngIf="buffettPositions().length > 0">
-          {{ buffettPositions()[0]?.symbol }}
+          {{ buffettPositions()[0].symbol }}
         </div>
         <div class="portfolio-subtitle" *ngIf="buffettPositions().length > 0">
           {{ formatPercentage(buffettPositions()[0].change_percent || 0) }}
@@ -97,7 +97,7 @@
               {{ formatPercentage(position.change_percent) }}
             </span>
           </div>
-          <div class="col-shares">{{ position.position_size?.toLocaleString() }}</div>
+          <div class="col-shares">{{ (position.position_size ?? 0).toLocaleString() }}</div>
           <div class="col-value">{{ formatCurrency(position.value || 0) }}</div>
           <div class="col-recommendation">
             <div class="recommendation-container">
